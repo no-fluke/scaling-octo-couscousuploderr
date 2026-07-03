@@ -1273,9 +1273,10 @@ async def txt_handler(bot: Client, m: Message):
             url = "https://" + Vxy
             link0 = "https://" + Vxy
 
-            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("_", "").replace("\t", "").replace(":", "").replace("/", "").replace("+", "").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "").replace("https", "").replace("http", "").strip()
+            name1 = links[i][0].replace("(", "[").replace(")", "]").replace("\t", "").replace(":", "_").replace("/", "_").replace("+", "_").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "_").replace("https", "").replace("http", "").strip()
+            name1 = re.sub(r'_+', '_', name1).strip('_')
             if "," in raw_text3:
-                 name = f'{PRENAME} {name1[:60]}'
+                 name = f'{PRENAME}_{name1[:60]}'
             else:
                  name = f'{name1[:60]}'
             
@@ -1340,6 +1341,9 @@ async def txt_handler(bot: Client, m: Message):
             # ------------------- FIXED FORMAT SELECTOR FOR YOUTUBE -------------------
             if "youtu" in url:
                 ytf = f"bv*[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[height<=?{raw_text2}]"
+            elif "wistia" in url or ".m3u8" in url:
+                # Wistia/HLS = muxed single stream; bestvideo+bestaudio won't exist
+                ytf = f"b[height<={raw_text2}]/best[height<={raw_text2}]/b/best"
             elif "embed" in url:
                 ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
             else:
@@ -1701,11 +1705,12 @@ async def text_handler(bot: Client, m: Message):
                 oembed_url = f"https://www.youtube.com/oembed?url={url}&format=json"
                 response = requests.get(oembed_url)
                 audio_title = response.json().get('title', 'YouTube Video')
-                audio_title = audio_title.replace("_", " ")
+                audio_title = re.sub(r'[^\w\s-]', '', audio_title).strip().replace(" ", "_")
                 name = f'{audio_title[:60]}'        
                 name1 = f'{audio_title}'
             else:
-                name1 = links.replace("(", "[").replace(")", "]").replace("_", " ").replace("\t", "").replace(":", " ").replace("/", " ").replace("+", " ").replace("#", " ").replace("|", " ").replace("@", " ").replace("*", " ").replace(".", " ").replace("https", "").replace("http", "").strip()
+                name1 = links.replace("(", "[").replace(")", "]").replace("_", "_").replace("\t", "").replace(":", "_").replace("/", "_").replace("+", "_").replace("#", "").replace("|", "").replace("@", "").replace("*", "").replace(".", "_").replace("https", "").replace("http", "").strip()
+                name1 = re.sub(r'_+', '_', name1).strip('_')
                 name = f'{name1[:60]}'
             
             if "visionias" in url:
@@ -1766,6 +1771,9 @@ async def text_handler(bot: Client, m: Message):
             # ------------------- FIXED FORMAT SELECTOR FOR YOUTUBE -------------------
             if "youtu" in url:
                 ytf = f"bv*[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[height<=?{raw_text2}]"
+            elif "wistia" in url or ".m3u8" in url:
+                # Wistia/HLS = muxed single stream; bestvideo+bestaudio won't exist
+                ytf = f"b[height<={raw_text2}]/best[height<={raw_text2}]/b/best"
             elif "embed" in url:
                 ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
             else:
