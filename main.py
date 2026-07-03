@@ -2,6 +2,18 @@ import os
 import re
 import sys
 import m3u8
+import m3u8.parser as _m3u8_parser
+import re as _re
+
+# ── Patch: Wistia (and some CDNs) emit BANDWIDTH= with an empty value,
+#    causing "could not convert string to float" in the m3u8 parser.
+#    Replace empty BANDWIDTH= with 0 before the attribute list is parsed.
+_orig_parse_stream_inf = _m3u8_parser._parse_stream_inf
+def _safe_parse_stream_inf(line, data, state, **kwargs):
+    line = _re.sub(r'BANDWIDTH=(?=,|\s|$)', 'BANDWIDTH=0', line)
+    return _orig_parse_stream_inf(line, data, state, **kwargs)
+_m3u8_parser._parse_stream_inf = _safe_parse_stream_inf
+
 import json
 import time
 import pytz
@@ -1346,10 +1358,12 @@ async def txt_handler(bot: Client, m: Message):
                     f'-R 25 --fragment-retries 25 '
                     f'"{url}" -o "{name}.mp4"'
                 )
-            elif ".m3u8" in url or "vimeo" in url or "akamaized" in url or "fastly" in url:
-                # Vimeo HLS — concurrent fragment downloading for speed
+            elif ".m3u8" in url or "wistia" in url or "vimeo" in url or "akamaized" in url or "fastly" in url:
+                # HLS streams — use ffmpeg backend to avoid m3u8 BANDWIDTH parse errors
                 cmd = (
                     f'yt-dlp -f "{ytf}" '
+                    f'--hls-prefer-ffmpeg '
+                    f'--no-check-formats '
                     f'--concurrent-fragments 16 '
                     f'--no-part '
                     f'"{url}" -o "{name}.mp4"'
@@ -1769,10 +1783,12 @@ async def text_handler(bot: Client, m: Message):
                     f'-R 25 --fragment-retries 25 '
                     f'"{url}" -o "{name}.mp4"'
                 )
-            elif ".m3u8" in url or "vimeo" in url or "akamaized" in url or "fastly" in url:
-                # Vimeo HLS — concurrent fragment downloading for speed
+            elif ".m3u8" in url or "wistia" in url or "vimeo" in url or "akamaized" in url or "fastly" in url:
+                # HLS streams — use ffmpeg backend to avoid m3u8 BANDWIDTH parse errors
                 cmd = (
                     f'yt-dlp -f "{ytf}" '
+                    f'--hls-prefer-ffmpeg '
+                    f'--no-check-formats '
                     f'--concurrent-fragments 16 '
                     f'--no-part '
                     f'"{url}" -o "{name}.mp4"'
