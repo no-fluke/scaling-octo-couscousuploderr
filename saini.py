@@ -251,7 +251,12 @@ def time_name():
 
 failed_counter = 0  # global retry counter for download_video
 async def download_video(url,cmd, name):
-    download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c:-x 16 -j 32"'
+    # aria2c does not support HLS segmented streams -- skip it for m3u8/Wistia
+    is_hls = any(x in url for x in [".m3u8", "wistia", "akamaized", "fastly"])
+    if is_hls:
+        download_cmd = f'{cmd} -R 25 --fragment-retries 25'
+    else:
+        download_cmd = f'{cmd} -R 25 --fragment-retries 25 --external-downloader aria2c --downloader-args "aria2c:-x 16 -j 32"'
     global failed_counter
     print(download_cmd)
     logging.info(download_cmd)
