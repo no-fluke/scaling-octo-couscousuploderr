@@ -1341,9 +1341,6 @@ async def txt_handler(bot: Client, m: Message):
             # ------------------- FIXED FORMAT SELECTOR FOR YOUTUBE -------------------
             if "youtu" in url:
                 ytf = f"bv*[height<={raw_text2}][ext=mp4]+ba[ext=m4a]/b[height<=?{raw_text2}]"
-            elif "wistia" in url or ".m3u8" in url:
-                # Wistia/HLS = muxed single stream; bestvideo+bestaudio won't exist
-                ytf = f"b[height<={raw_text2}]/best[height<={raw_text2}]/b/best"
             elif "embed" in url:
                 ytf = f"bestvideo[height<={raw_text2}]+bestaudio/best[height<={raw_text2}]"
             else:
@@ -1363,9 +1360,9 @@ async def txt_handler(bot: Client, m: Message):
                     f'"{url}" -o "{name}.mp4"'
                 )
             elif ".m3u8" in url or "wistia" in url or "vimeo" in url or "akamaized" in url or "fastly" in url:
-                # HLS streams — use ffmpeg backend to avoid m3u8 BANDWIDTH parse errors
+                # HLS/Wistia — skip format filtering, just grab what's available
                 cmd = (
-                    f'yt-dlp -f "{ytf}" '
+                    f'yt-dlp '
                     f'--hls-prefer-ffmpeg '
                     f'--no-check-formats '
                     f'--concurrent-fragments 16 '
